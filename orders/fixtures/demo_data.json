@@ -1,0 +1,399 @@
+[
+  {
+    "model": "auth.user",
+    "pk": 1,
+    "fields": {
+      "username": "admin",
+      "email": "admin@gmail.com",
+      "first_name": "Admin",
+      "last_name": "",
+      "is_staff": true,
+      "is_superuser": true,
+      "is_active": true,
+      "password": "pbkdf2_sha256$1500000$pJnIqkgvzV2HdgKPY1cjlh$qMwoKf9FFJZOOEikr81ldZCYpjWZub7xXZOBQfTmRuk=",
+      "date_joined": "2024-01-01T00:00:00Z",
+      "last_login": null,
+      "groups": [],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "auth.user",
+    "pk": 2,
+    "fields": {
+      "username": "arvind",
+      "email": "arvind.rao@gmail.com",
+      "first_name": "Arvind",
+      "last_name": "Rao",
+      "is_staff": false,
+      "is_superuser": false,
+      "is_active": true,
+      "password": "pbkdf2_sha256$1500000$pJnIqkgvzV2HdgKPY1cjlh$qMwoKf9FFJZOOEikr81ldZCYpjWZub7xXZOBQfTmRuk=",
+      "date_joined": "2024-01-01T00:00:00Z",
+      "last_login": null,
+      "groups": [],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "auth.user",
+    "pk": 3,
+    "fields": {
+      "username": "meera",
+      "email": "meera.iyer@gmail.com",
+      "first_name": "Meera",
+      "last_name": "Iyer",
+      "is_staff": false,
+      "is_superuser": false,
+      "is_active": true,
+      "password": "pbkdf2_sha256$1500000$pJnIqkgvzV2HdgKPY1cjlh$qMwoKf9FFJZOOEikr81ldZCYpjWZub7xXZOBQfTmRuk=",
+      "date_joined": "2024-01-01T00:00:00Z",
+      "last_login": null,
+      "groups": [],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "auth.user",
+    "pk": 4,
+    "fields": {
+      "username": "vikram",
+      "email": "vikram.nair@gmail.com",
+      "first_name": "Vikram",
+      "last_name": "Nair",
+      "is_staff": false,
+      "is_superuser": false,
+      "is_active": true,
+      "password": "pbkdf2_sha256$1500000$pJnIqkgvzV2HdgKPY1cjlh$qMwoKf9FFJZOOEikr81ldZCYpjWZub7xXZOBQfTmRuk=",
+      "date_joined": "2024-01-01T00:00:00Z",
+      "last_login": null,
+      "groups": [],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "orders.product",
+    "pk": 1,
+    "fields": {
+      "name": "TimberNest Mango Wood Coffee Table",
+      "description": "Handcrafted solid mango wood coffee table with a natural matte finish and sturdy hairpin legs. Ideal for living rooms up to 150 sq ft.",
+      "price": "12999.00",
+      "category": "Coffee Table",
+      "in_stock": true
+    }
+  },
+  {
+    "model": "orders.product",
+    "pk": 2,
+    "fields": {
+      "name": "TimberNest Oak Study Desk with Drawer",
+      "description": "Compact solid oak study desk with a single storage drawer and cable-management cutout. Scratch-resistant matte lacquer finish.",
+      "price": "18999.00",
+      "category": "Desk",
+      "in_stock": true
+    }
+  },
+  {
+    "model": "orders.product",
+    "pk": 3,
+    "fields": {
+      "name": "TimberNest Solid Sheesham Dining Table (6-Seater)",
+      "description": "Premium solid sheesham wood dining table seating 6, with a rich walnut-brown finish and reinforced cross-leg base.",
+      "price": "45999.00",
+      "category": "Dining",
+      "in_stock": true
+    }
+  },
+  {
+    "model": "orders.product",
+    "pk": 4,
+    "fields": {
+      "name": "TimberNest Sheesham Wood Bookshelf (5-Tier)",
+      "description": "5-tier solid sheesham wood bookshelf with open shelving, wall-anchor kit included for stability.",
+      "price": "15999.00",
+      "category": "Storage",
+      "in_stock": true
+    }
+  },
+  {
+    "model": "orders.product",
+    "pk": 5,
+    "fields": {
+      "name": "TimberNest Solid Wood Bed Frame (Queen)",
+      "description": "Queen-size solid wood bed frame with slatted base and under-bed clearance, walnut finish.",
+      "price": "38999.00",
+      "category": "Bedroom",
+      "in_stock": true
+    }
+  },
+  {
+    "model": "orders.product",
+    "pk": 6,
+    "fields": {
+      "name": "TimberNest Teak Wood Wardrobe (3-Door)",
+      "description": "Spacious 3-door teak wood wardrobe with hanging rail, 4 internal shelves, and a full-length mirror panel.",
+      "price": "52999.00",
+      "category": "Bedroom",
+      "in_stock": true
+    }
+  },
+  {
+    "model": "orders.product",
+    "pk": 7,
+    "fields": {
+      "name": "TimberNest Rocking Chair",
+      "description": "Classic solid wood rocking chair with a woven cane seat and backrest, finished in warm teak brown.",
+      "price": "9999.00",
+      "category": "Seating",
+      "in_stock": true
+    }
+  },
+  {
+    "model": "orders.product",
+    "pk": 8,
+    "fields": {
+      "name": "TimberNest Wooden Bench with Storage",
+      "description": "Entryway bench in solid mango wood with a hinged lid concealing internal storage space.",
+      "price": "11999.00",
+      "category": "Seating",
+      "in_stock": true
+    }
+  },
+  {
+    "model": "orders.product",
+    "pk": 9,
+    "fields": {
+      "name": "TimberNest Wall-Mounted Wooden Shelf Set",
+      "description": "Set of 3 solid wood floating wall shelves in varying sizes, with concealed mounting brackets.",
+      "price": "3499.00",
+      "category": "Accessories",
+      "in_stock": true
+    }
+  },
+  {
+    "model": "orders.product",
+    "pk": 10,
+    "fields": {
+      "name": "TimberNest Wood Polish & Care Kit",
+      "description": "Complete wood care kit with natural oil polish, microfiber cloth, and scratch-touch-up pen for solid wood furniture.",
+      "price": "899.00",
+      "category": "Accessories",
+      "in_stock": true
+    }
+  },
+  {
+    "model": "orders.order",
+    "pk": 1,
+    "fields": {
+      "user": 2,
+      "product": 3,
+      "product_name": "TimberNest Solid Sheesham Dining Table (6-Seater)",
+      "amount": "45999.00",
+      "status": "dispatched",
+      "carrier": "BlueDart",
+      "tracking_number": "BD99281733",
+      "delivery": "14, MG Road, Indiranagar, Bangalore - 560038",
+      "created_at": "2025-04-26T10:30:00Z",
+      "updated_at": "2025-04-26T10:30:00Z"
+    }
+  },
+  {
+    "model": "orders.order",
+    "pk": 2,
+    "fields": {
+      "user": 2,
+      "product": 2,
+      "product_name": "TimberNest Oak Study Desk with Drawer",
+      "amount": "18999.00",
+      "status": "delivered",
+      "carrier": "Delhivery",
+      "tracking_number": "DL44729103",
+      "delivery": "14, MG Road, Indiranagar, Bangalore - 560038",
+      "created_at": "2025-03-11T14:00:00Z",
+      "updated_at": "2025-03-11T14:00:00Z"
+    }
+  },
+  {
+    "model": "orders.order",
+    "pk": 3,
+    "fields": {
+      "user": 2,
+      "product": 10,
+      "product_name": "TimberNest Wood Polish & Care Kit",
+      "amount": "899.00",
+      "status": "delivered",
+      "carrier": "Delhivery",
+      "tracking_number": "DL88103742",
+      "delivery": "14, MG Road, Indiranagar, Bangalore - 560038",
+      "created_at": "2025-02-16T09:15:00Z",
+      "updated_at": "2025-02-16T09:15:00Z"
+    }
+  },
+  {
+    "model": "orders.order",
+    "pk": 4,
+    "fields": {
+      "user": 2,
+      "product": 9,
+      "product_name": "TimberNest Wall-Mounted Wooden Shelf Set",
+      "amount": "3499.00",
+      "status": "cancelled",
+      "carrier": "",
+      "tracking_number": "",
+      "delivery": "14, MG Road, Indiranagar, Bangalore - 560038",
+      "created_at": "2025-04-28T16:45:00Z",
+      "updated_at": "2025-04-28T16:45:00Z"
+    }
+  },
+  {
+    "model": "orders.order",
+    "pk": 5,
+    "fields": {
+      "user": 2,
+      "product": 7,
+      "product_name": "TimberNest Rocking Chair",
+      "amount": "9999.00",
+      "status": "pending",
+      "carrier": "",
+      "tracking_number": "",
+      "delivery": "14, MG Road, Indiranagar, Bangalore - 560038",
+      "created_at": "2025-04-30T20:00:00Z",
+      "updated_at": "2025-04-30T20:00:00Z"
+    }
+  },
+  {
+    "model": "orders.order",
+    "pk": 6,
+    "fields": {
+      "user": 3,
+      "product": 6,
+      "product_name": "TimberNest Teak Wood Wardrobe (3-Door)",
+      "amount": "52999.00",
+      "status": "dispatched",
+      "carrier": "Ekart",
+      "tracking_number": "EK556612309",
+      "delivery": "7, Linking Road, Bandra West, Mumbai - 400050",
+      "created_at": "2025-04-27T11:00:00Z",
+      "updated_at": "2025-04-27T11:00:00Z"
+    }
+  },
+  {
+    "model": "orders.order",
+    "pk": 7,
+    "fields": {
+      "user": 3,
+      "product": 5,
+      "product_name": "TimberNest Solid Wood Bed Frame (Queen)",
+      "amount": "38999.00",
+      "status": "delivered",
+      "carrier": "BlueDart",
+      "tracking_number": "BD77412390",
+      "delivery": "7, Linking Road, Bandra West, Mumbai - 400050",
+      "created_at": "2025-03-01T08:30:00Z",
+      "updated_at": "2025-03-01T08:30:00Z"
+    }
+  },
+  {
+    "model": "orders.order",
+    "pk": 8,
+    "fields": {
+      "user": 4,
+      "product": 1,
+      "product_name": "TimberNest Mango Wood Coffee Table",
+      "amount": "12999.00",
+      "status": "delivered",
+      "carrier": "Delhivery",
+      "tracking_number": "DL33219876",
+      "delivery": "23, Anna Salai, Teynampet, Chennai - 600018",
+      "created_at": "2025-03-15T13:20:00Z",
+      "updated_at": "2025-03-15T13:20:00Z"
+    }
+  },
+  {
+    "model": "orders.order",
+    "pk": 9,
+    "fields": {
+      "user": 4,
+      "product": 8,
+      "product_name": "TimberNest Wooden Bench with Storage",
+      "amount": "11999.00",
+      "status": "dispatched",
+      "carrier": "BlueDart",
+      "tracking_number": "BD10293847",
+      "delivery": "23, Anna Salai, Teynampet, Chennai - 600018",
+      "created_at": "2025-04-25T17:10:00Z",
+      "updated_at": "2025-04-25T17:10:00Z"
+    }
+  },
+  {
+    "model": "orders.order",
+    "pk": 10,
+    "fields": {
+      "user": 3,
+      "product": 4,
+      "product_name": "TimberNest Sheesham Wood Bookshelf (5-Tier)",
+      "amount": "15999.00",
+      "status": "pending",
+      "carrier": "",
+      "tracking_number": "",
+      "delivery": "7, Linking Road, Bandra West, Mumbai - 400050",
+      "created_at": "2025-05-01T10:00:00Z",
+      "updated_at": "2025-05-01T10:00:00Z"
+    }
+  },
+  {
+    "model": "orders.refundrequest",
+    "pk": 1,
+    "fields": {
+      "order": 3,
+      "user": 2,
+      "reason": "Wood polish bottle arrived leaking and half empty.",
+      "status": "approved",
+      "created_at": "2025-02-20T10:00:00Z"
+    }
+  },
+  {
+    "model": "orders.refundrequest",
+    "pk": 2,
+    "fields": {
+      "order": 2,
+      "user": 2,
+      "reason": "Desk drawer doesn't slide smoothly, feels misaligned.",
+      "status": "denied",
+      "created_at": "2025-03-20T14:30:00Z"
+    }
+  },
+  {
+    "model": "orders.refundrequest",
+    "pk": 3,
+    "fields": {
+      "order": 7,
+      "user": 3,
+      "reason": "Bed frame arrived with a visible crack on one of the side rails.",
+      "status": "approved",
+      "created_at": "2025-03-10T09:00:00Z"
+    }
+  },
+  {
+    "model": "orders.refundrequest",
+    "pk": 4,
+    "fields": {
+      "order": 8,
+      "user": 4,
+      "reason": "Coffee table wobbles even after tightening all the legs.",
+      "status": "pending",
+      "created_at": "2025-03-25T16:00:00Z"
+    }
+  },
+  {
+    "model": "orders.refundrequest",
+    "pk": 5,
+    "fields": {
+      "order": 1,
+      "user": 2,
+      "reason": "Dining table dispatched 6 days ago but not delivered yet. Want refund.",
+      "status": "pending",
+      "created_at": "2025-04-30T11:00:00Z"
+    }
+  }
+]
