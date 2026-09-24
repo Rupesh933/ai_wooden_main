@@ -28,7 +28,7 @@ class Order(models.Model):
     status = models.CharField(max_length=100, choices=STATUS_CHOICE, default="pending")
     carrier = models.CharField(max_length=100, blank=True)
     tracking_number = models.CharField(max_length=100, blank=True)
-    delivery = models.TextField(blank=True)
+         = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
 
