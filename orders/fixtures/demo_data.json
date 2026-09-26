@@ -2,7 +2,7 @@
   {
     "model": "auth.user",
     "pk": 1,
-    "fields": {
+    "fields": { 
       "username": "admin",
       "email": "admin@gmail.com",
       "first_name": "Admin",

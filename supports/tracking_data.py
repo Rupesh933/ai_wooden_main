@@ -6,6 +6,7 @@ DELIVERY_DATA = {
         "estimated_delivery": "Tomorrow",
         "delay_reason": "High volume at sorting facility",
     },
+
     "DL44729103": {
         "status": "Delivered",
         "last_location": "Delivered to door",
@@ -13,6 +14,15 @@ DELIVERY_DATA = {
         "estimated_delivery": "Delivered",
         "delay_reason": None,
     },
+
+    "DL88103742": {
+        "status": "Delivered",
+        "last_location": "Bangalore",
+        "last_update": "Delivered 3 months ago",
+        "estimated_delivery": "Delivered",
+        "delay_reason": None,
+    },
+
     "EK556612309": {
         "status": "In Transit",
         "last_location": "Mumbai Distribution Center",
@@ -20,6 +30,23 @@ DELIVERY_DATA = {
         "estimated_delivery": "2 days",
         "delay_reason": "Oversized item — wardrobe requires special handling vehicle",
     },
+
+    "BD77412390": {
+        "status": "Delivered",
+        "last_location": "Bandra Delivery Hub",
+        "last_update": "On time",
+        "estimated_delivery": "Delivered",
+        "delay_reason": None,
+    },
+
+    "DL33219876": {
+        "status": "Delivered",
+        "last_location": "Chennai Delivery Hub",
+        "last_update": "On time",
+        "estimated_delivery": "Delivered",
+        "delay_reason": None,
+    },
+
     "BD10293847": {
         "status": "In Transit",
         "last_location": "Chennai Hub",
