@@ -1,5 +1,6 @@
-from orders.models import Order
+from orders.models import Order, RefundRequest
 from django.utils import timezone
+from .tracking_data import DELIVERY_DATA
 
 def get_order_details(order_id):
     try:
@@ -17,3 +18,36 @@ def get_order_details(order_id):
         }
     except Order.DoesNotExist:
         return {"error": f"Order #{order.id} not found."}
+
+
+def get_refund_history(user_id):
+    refunds = RefundRequest.objects.filter(user_id=user_id).order_by("-created_at")
+
+
+    history = []
+    for refund in refunds:
+        history.append({
+            "order_id": refund.order.id,
+            "product": refund.order.product_name,
+            "reason": refund.reason,
+            "status": refund.status,
+            "requested_on": refund.created_at.strftime("%d %b %Y"),
+        })
+    return {
+        "total_refund_request": len(history),
+        "history": history
+    }
+
+def check_delivery_status(tracking_number, carrier):
+    default_response = {
+        "status": "Unknown",
+        "last_location": "Tracking info unavailable",
+        "last_update": "N/A",
+        "estimated_delivery": "Contact carrier directly",
+        "delay_reason": "No update for carrier",
+    }
+
+    result = DELIVERY_DATA.get(tracking_number, default_response)
+    result["tracking_number"] = tracking_number
+    result["carrier"] = carrier
+    return result
