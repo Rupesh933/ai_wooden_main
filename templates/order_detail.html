@@ -199,14 +199,13 @@
       color: #fff;
     }
 
-   #chat-box {
-    display: flex;
+  #chat-box {
+    display: none;
     flex-direction: column;
-    opacity: 0;
   }
 
-  #chat-box.visible{
-    opacity: 1;
+  #chat-box.visible {
+    display: flex;
   }
 
   .chat-messages {
@@ -372,38 +371,80 @@
 </div>
 
 <script>
-  function showChat(){
-    document.getElementById("help-card").style.display = "None";
+  let isSending = false;
+  let typingTimer = null;
 
-    const chatBox = document.getElementById("chat-box");
-
-    chatBox.classList.add("visible");
+  function showChat() {
+    document.getElementById("help-card").hidden = true;
+    document.getElementById("chat-box").classList.add("visible");
+    document.getElementById("chat-input").focus();
   }
-  function appendMessage(text, type) {
+
+  function appendMessage(message, sender) {
+    const messageElement = document.createElement("div");
+    messageElement.className = `${sender}-message p-2 px-3`;
+    messageElement.textContent = message;
+
     const messages = document.getElementById("chat-messages");
-
-    const div = document.createElement("div");
-    div.classList.add(type === "customer" ? "customer-message" : "agent-message");
-    div.classList.add("p-2", "px-3");
-    div.innerText = text;
-
-    messages.appendChild(div);
+    messages.appendChild(messageElement);
     messages.scrollTop = messages.scrollHeight;
   }
 
-  function sendMessage() {
+  function showTyping() {
+    if (document.getElementById("typing-indicator")) return; // never create a duplicate
+    const messages = document.getElementById("chat-messages");
+    messages.insertAdjacentHTML("beforeend", `
+      <div id="typing-indicator" class="agent-message p-2" style="font-size:13px; max-width:85%;">Typing...</div>
+    `);
+    messages.scrollTop = messages.scrollHeight;
+  }
+
+  function hideTyping() {
+    clearTimeout(typingTimer); // cancel the pending timer if it hasn't fired yet
+    document.getElementById("typing-indicator")?.remove(); // safe even if it doesn't exist
+  }
+
+  async function sendMessage() {
     const input = document.getElementById("chat-input");
     const message = input.value.trim();
 
-    if (!message) return;
+    if (!message || isSending) return;
 
+    isSending = true;
     appendMessage(message, "customer");
-
     input.value = "";
+
+    typingTimer = setTimeout(showTyping, 1000); // only shows if the reply takes over 1 second
+
+    try {
+      const response = await fetch("/supports/chat/{{order.id}}/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": "{{ csrf_token }}"
+        },
+        body: JSON.stringify({ message: message })
+      });
+
+      if (!response.ok) throw new Error("Server returned " + response.status);
+
+      const data = await response.json();
+      hideTyping();
+      appendMessage(data.reply, "agent");
+
+    } catch (error) {
+      console.error("Error: ", error);
+      hideTyping();
+      appendMessage("Sorry, I couldn't send that message. Please try again.", "agent");
+    } finally {
+      hideTyping();      // final safety net
+      isSending = false;
+    }
   }
 
   document.getElementById("chat-input").addEventListener("keydown", function (e) {
     if (e.key === "Enter") {
+      e.preventDefault();
       sendMessage();
     }
   });
