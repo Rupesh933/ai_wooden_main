@@ -22,9 +22,9 @@
     "pk": 11,
     "fields": {
       "user": 5,
-      "product": 1,
-      "product_name": "CoolBreeze 1.5 Ton 5 Star Inverter Split AC",
-      "amount": "42999.00",
+      "product": 3,
+      "product_name": "TimberNest Solid Sheesham Dining Table (6-Seater)",
+      "amount": "45999.00",
       "status": "delivered",
       "carrier": "BlueDart",
       "tracking_number": "BD11111111",
@@ -39,8 +39,8 @@
     "fields": {
       "user": 5,
       "product": 2,
-      "product_name": "CoolBreeze 1.5 Ton 3 Star Split AC",
-      "amount": "34999.00",
+      "product_name": "TimberNest Oak Study Desk with Drawer",
+      "amount": "18999.00",
       "status": "delivered",
       "carrier": "Delhivery",
       "tracking_number": "DL22222222",
@@ -54,9 +54,9 @@
     "pk": 13,
     "fields": {
       "user": 5,
-      "product": 3,
-      "product_name": "CoolBreeze 2 Ton 3 Star Split AC",
-      "amount": "45999.00",
+      "product": 5,
+      "product_name": "TimberNest Solid Wood Bed Frame (Queen)",
+      "amount": "38999.00",
       "status": "delivered",
       "carrier": "BlueDart",
       "tracking_number": "BD33333333",
@@ -71,8 +71,8 @@
     "fields": {
       "user": 5,
       "product": 4,
-      "product_name": "CoolBreeze 1 Ton 5 Star Inverter Split AC",
-      "amount": "38999.00",
+      "product_name": "TimberNest Sheesham Wood Bookshelf (5-Tier)",
+      "amount": "15999.00",
       "status": "delivered",
       "carrier": "Ekart",
       "tracking_number": "EK44444444",
@@ -86,9 +86,9 @@
     "pk": 15,
     "fields": {
       "user": 5,
-      "product": 5,
-      "product_name": "CoolBreeze 2 Ton 5 Star Inverter Cassette AC",
-      "amount": "68999.00",
+      "product": 6,
+      "product_name": "TimberNest Teak Wood Wardrobe (3-Door)",
+      "amount": "52999.00",
       "status": "delivered",
       "carrier": "BlueDart",
       "tracking_number": "BD55555555",
@@ -103,7 +103,7 @@
     "fields": {
       "order": 11,
       "user": 5,
-      "reason": "AC stopped working after 2 days",
+      "reason": "Table leg cracked after 2 days.",
       "status": "approved",
       "created_at": "2025-01-12T10:00:00Z"
     }
@@ -114,7 +114,7 @@
     "fields": {
       "order": 11,
       "user": 5,
-      "reason": "Wrong model delivered",
+      "reason": "Wrong finish delivered.",
       "status": "denied",
       "created_at": "2025-01-20T10:00:00Z"
     }
@@ -125,7 +125,7 @@
     "fields": {
       "order": 12,
       "user": 5,
-      "reason": "AC making loud noise",
+      "reason": "Desk drawer does not slide smoothly.",
       "status": "denied",
       "created_at": "2025-02-08T10:00:00Z"
     }
@@ -136,7 +136,7 @@
     "fields": {
       "order": 12,
       "user": 5,
-      "reason": "Product not as described",
+      "reason": "Product not as described.",
       "status": "denied",
       "created_at": "2025-02-15T10:00:00Z"
     }
@@ -147,7 +147,7 @@
     "fields": {
       "order": 13,
       "user": 5,
-      "reason": "AC not cooling properly",
+      "reason": "Bed frame has a crack on the side rail.",
       "status": "approved",
       "created_at": "2025-03-05T10:00:00Z"
     }
@@ -158,7 +158,7 @@
     "fields": {
       "order": 14,
       "user": 5,
-      "reason": "Received damaged product",
+      "reason": "Received damaged product.",
       "status": "denied",
       "created_at": "2025-03-25T10:00:00Z"
     }
@@ -169,7 +169,7 @@
     "fields": {
       "order": 15,
       "user": 5,
-      "reason": "AC compressor not working",
+      "reason": "Wardrobe door hinge is loose and the door does not close.",
       "status": "pending",
       "created_at": "2025-04-12T10:00:00Z"
     }
@@ -180,7 +180,7 @@
     "fields": {
       "order": 13,
       "user": 5,
-      "reason": "Want to return — changed my mind",
+      "reason": "Want to return - changed my mind.",
       "status": "denied",
       "created_at": "2025-03-10T10:00:00Z"
     }

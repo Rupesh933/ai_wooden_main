@@ -3,7 +3,7 @@ import json
 from google import genai
 from django.conf import settings
 
-from .tools import get_order_details, get_refund_history, check_delivery_status
+from .tools import get_order_details, get_refund_history, check_delivery_status, get_customer_risk_profile
 from .models import Conversation
 
 GEMINI_KEY = settings.GEMINI_API_KEY
@@ -229,12 +229,39 @@ MANAGER_TOOLS = [
     {
         "function_declarations": [
             {
-                "name": "get_refund_history",
-                "description": "Get complete refund history for the current customer. Use this before making a refund decision.",
+                "name": "access_fraud_risk",
+                "description": "Consult the risk agent to access fraud risk for a customer. Use this when refund request looks suspicious or customer has multiple refund requests. Pass the user_id to get a risk verdict.",
                 "parameters": {
                     "type": "OBJECT",
-                    "properties": {}
+                    "properties": {
+                        "user_id": {
+                            "type": "INTEGER",
+                            "description": "The user ID to access the fraud risk for"
+                        }
+                    },
+                    "required": ["user_id"]
                 }
+            }
+        ]
+    }
+]
+
+RISK_TOOLS = [
+    {
+        "function_declarations": [
+            {
+                "name": "get_customer_risk_profile",
+                "description": "Get complete risk profile for a customer including order history, refund patterns and ratio. Use this to access fraud risk.",
+                "parameters": {
+                    "type": "OBJECT",
+                    "properties": {
+                        "user_id": {
+                            "type": "INTEGER",
+                            "description": "The user ID to access risk for"
+                        }
+                    },
+                    "required": ["user_id"]
+                },
             }
         ]
     }
@@ -259,6 +286,16 @@ def execute_tool(tool_name, tool_input, user_id, order_id):
         decision = run_manager_agent(case_summary, user_id)
         print("decision ===> ", decision)
         return decision
+
+    if tool_name == "access_fraud_risk":
+        user_id = tool_input["user_id"]
+        print("Consulting risk agent for user ===>> ", user_id)
+        verdict = run_risk_agent(user_id)
+        print("risk_verdict ===> ", verdict)
+        return verdict
+
+    if tool_name == "get_customer_risk_profile":
+        return get_customer_risk_profile(tool_input["user_id"])
 
     # Unknown tool name
     return {"error": f"Unknown tool: {tool_name}"}
@@ -416,3 +453,58 @@ def run_manager_agent(case_summary, user_id):
         })
 
     return "Manager could not finish. Please try again."
+
+def run_risk_agent(user_id):
+    risk_messages = [
+        {
+            "role": "user",
+            "parts": [{"text": f"Please assess the fraud risk for user ID {user_id}. Use your tool to get their profile and return a verdict."}],
+        }
+    ]
+
+    # Max 5 rounds, so tokens are not burned forever
+    for round_number in range(5):
+        response = client.models.generate_content(
+            model=GEMINI_MODEL,
+            contents=risk_messages,
+            config={
+                "system_instruction": RISK_SYSTEM_PROMPT,
+                "max_output_tokens": 1024,
+                "tools": RISK_TOOLS,
+            },
+        )
+
+        # No function call means this is the final verdict
+        if not getattr(response, "function_calls", None):
+            return response.text or "Risk agent could not make a verdict."
+
+        # Save the model's tool request in the history
+        risk_messages.append(response.candidates[0].content)
+
+        # Run each tool and collect the results
+        result_parts = []
+        for call in response.function_calls:
+            print("Risk Tool Call ===> ", call.name, call.args)
+            try:
+                result = execute_tool(call.name, call.args or {}, user_id, None)
+                result = json.loads(json.dumps(result, default=str))
+                print("Risk Tool Result ===> ", result)
+            except Exception as e:
+                print("Risk Tool Error ===> ", call.name, repr(e))
+                result = {"error": "This information is not available right now."}
+
+            result_parts.append({
+                "function_response": {
+                    "id": call.id,
+                    "name": call.name,
+                    "response": {"result": result},
+                }
+            })
+
+        # Send the tool results back as a "user" message, then loop again
+        risk_messages.append({
+            "role": "user",
+            "parts": result_parts,
+        })
+
+    return "Risk agent could not finish. Please try again."
