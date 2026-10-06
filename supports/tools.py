@@ -20,9 +20,13 @@ def get_order_details(order_id):
         return {"error": f"Order #{order.id} not found."}
 
 
-def get_refund_history(user_id):
-    refunds = RefundRequest.objects.filter(user_id=user_id).order_by("-created_at")
-
+def get_refund_history(order_id=None, user_id=None):
+    if order_id is not None:
+        refunds = RefundRequest.objects.filter(order_id=order_id).order_by("-created_at")
+    elif user_id is not None:
+        refunds = RefundRequest.objects.filter(user_id=user_id).order_by("-created_at")
+    else:
+        return {"total_refund_request": 0, "history": []}
 
     history = []
     for refund in refunds:

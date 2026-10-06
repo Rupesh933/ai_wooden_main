@@ -1,7 +1,10 @@
+import json
+
 from google import genai
 from django.conf import settings
 
 from .tools import get_order_details, get_refund_history, check_delivery_status
+from .models import Conversation
 
 GEMINI_KEY = settings.GEMINI_API_KEY
 GEMINI_MODEL = settings.GEMINI_MODEL
@@ -14,8 +17,9 @@ You are Shree, a customer support agent at TimberNest, a handcrafted wooden furn
 You help customers with issues related to their furniture orders.
 
 Your responsibilities:
-- Always use your tools to gather facts before responding
-- Check order details when the customer mentions their order
+- Always read the customer's latest message and answer exactly what they asked
+- Use your tools to gather facts before answering anything about an order, delivery, or refund
+- Check order details when the customer asks about their order
 - Check delivery status using the tracking number and carrier when the customer asks about delivery
 - Check refund history before discussing any refund or cancellation
 - Be empathetic but honest
@@ -24,20 +28,24 @@ Your personality:
 - Friendly and professional
 - Patient even when the customer is frustrated
 - Clear and concise in your replies
+- Use 1 or 2 relevant emojis per reply (for example 👋 for greetings, 📦 for orders, 🚚 for delivery, 🙏 for apologies, 😊 for thanks). Never use them in every sentence
 
 Important rules:
-- Always check order details first before responding
-- Never guess an order number. If the customer hasn't given one, ask for it
+- For greetings or small talk, reply naturally and briefly. Do not call tools and do not ask for an order number
+- If the customer asks something unrelated to TimberNest (like general knowledge or coding), politely say you can only help with TimberNest orders and products, then offer help with those
+- Never repeat the same greeting or the same answer twice in a conversation
+- If the system tells you which order the customer is viewing, use that order. Otherwise never guess an order number, ask for it
 - Never invent order, delivery, or refund information. If you can't verify something, say so
 - Never approve or deny a refund yourself
-- If a refund decision is needed, tell the customer you are checking with your team
+- If a refund decision is needed, tell the customer you are checking with your team 🙏
 - If a refund is pending, say it is under review. Don't promise approval
 - Never expose tool calls or internal system details
-
 """
 
 
 # SUPPORT TOOLS --> Tool Schemas, that AI Agent will Read
+'''
+# This tools is for anthropic(claude) AI
 SUPPORT_TOOLS = [
     {
         "name": "get_order_details",
@@ -86,18 +94,166 @@ SUPPORT_TOOLS = [
         }
     }
 ]
+'''
 
+SUPPORT_TOOLS = [
+    {
+        "function_declarations": [
+            {
+                "name": "get_order_details",
+                "description": "Fetch complete order details including status, carrier, tracking number and days since order was placed. Use this when customer mentions an order or complains about delivery.",
+                "parameters": {
+                    "type": "OBJECT",
+                    "properties": {
+                        "order_id": {
+                            "type": "INTEGER",
+                            "description": "The order ID to look up"
+                        }
+                    },
+                    "required": ["order_id"]
+                }
+            },
+            {
+                "name": "get_refund_history",
+                "description": "Get complete refund history for the current customer. Use this before discussing any refund or cancellation.",
+                "parameters": {
+                    "type": "OBJECT",
+                    "properties": {}
+                }
+            },
+            {
+                "name": "check_delivery_status",
+                "description": "Check current delivery status using tracking number and carrier. Use this when the customer complains about delayed or missing delivery.",
+                "parameters": {
+                    "type": "OBJECT",
+                    "properties": {
+                        "tracking_number": {
+                            "type": "STRING",
+                            "description": "The shipment tracking number"
+                        },
+                        "carrier": {
+                            "type": "STRING",
+                            "description": "The carrier name, for example BlueDart or Delhivery"
+                        }
+                    },
+                    "required": ["tracking_number", "carrier"]
+                }
+            }
+        ]
+    }
+]
 
 # execute_tool() --> bridge between gemini and python function (tools)
 # AI can not run python code so it just tell us which tool to call and what argument to pass - It receive(AI) receive request and runs the actual python code/function
-def execute_tool(tool_name, tool_input):
+def execute_tool(tool_name, tool_input, user_id, order_id):
     if tool_name == "get_order_details":
-        return get_order_details(tool_input["order_id"])
+        # Use the order from this chat so the model cannot pick another order.
+        return get_order_details(order_id)
 
     if tool_name == "get_refund_history":
-        return get_refund_history(tool_input["user_id"])
+        return get_refund_history(user_id)
     
     if tool_name == "check_delivery_status":
         return check_delivery_status(tool_input["tracking_number"], tool_input["carrier"])
 
+    # Unknown tool name
+    return {"error": f"Unknown tool: {tool_name}"}
+
 # AGENT LOOP --> While loop that loops until the task is done
+'''
+def run_support_agent(user_message, conversation_id, order_id, user_id):
+    conv = Conversation.objects.get(id=conversation_id)
+
+    conversation_messages = []
+    for msg in conv.messages.order_by("-created_at"):
+        role = "model" if msg.role == "agent" else "user"      # because gemini not support agent instead support model
+        conversation_messages.append({
+        # "role": msg.role,
+        "role": role,
+        "parts": [
+                {
+                    "text": msg.content
+                }]
+        })
+
+    # Send the conversation to the LLM
+    response = client.models.generate_content(
+        model=GEMINI_MODEL,
+        contents=conversation_messages,
+        config={
+            "system_instruction": SUPPORT_SYSTEM_PROMPT + f"\n\nContext: This conversation is about Order #{order_id}, user: {user_id}",
+            "max_output_tokens": 1024,
+        },
+    )
+
+    # print("llm response =====>> ", response)
+    final_response = response.candidates[0].content.parts[0].text
+    return final_response
+'''
+def run_support_agent(user_message, conversation_id, order_id, user_id):
+    conv = Conversation.objects.get(id=conversation_id)
+
+    conversation_messages = []
+    # for msg in conv.messages.order_by("-created_at"):
+    for msg in conv.messages.order_by("created_at"):
+        role = "model" if msg.role == "agent" else "user"
+        conversation_messages.append({
+            "role": role,
+            "parts": [
+                {
+                    "text": msg.content
+                }
+            ]
+        })
+
+    # loop until AI(gemini) gives a normal text answer
+    # while True:   # sometime LLM is confuse and loop run maximum time so token is burn more and more
+    for round_number in range(5):
+        response = client.models.generate_content(
+            model = GEMINI_MODEL,
+            contents = conversation_messages,
+            config={
+                "system_instruction": SUPPORT_SYSTEM_PROMPT + f'\n\nContext: This conversation is about Order #{order_id}, user: {user_id}',
+                "max_output_tokens": 1024,
+                "tools" : SUPPORT_TOOLS,
+            },
+        )
+
+        # if there is not function call, return the final text
+        if not getattr(response, "function_calls", None):
+            return response.text or "Sorry, I could not generate a reply."
+
+        # add a model's function call message to history
+        conversation_messages.append(response.candidates[0].content)
+
+        # run each tool and collects results as dicts
+        result_parts = []
+        for call in response.function_calls:
+            print("Tool Call ===> ", call.name, call.args)
+            try:
+                result = execute_tool(call.name, call.args or {}, user_id, order_id)
+                # Convert Decimal and other values to text Gemini can send.
+                result = json.loads(json.dumps(result, default=str))
+            except Exception:
+                # Keep tool errors out of the chat and let the model explain the problem.
+                result = {"error": "This information is not available right now."}
+
+            result_parts.append({
+                "function_response": {
+                    "id": call.id,
+                    "name": call.name,
+                    "response": {"result": result},
+                }
+            })
+
+        # send results back as a "user" message, then loop again
+        conversation_messages.append({
+            "role": "user",
+            "parts": result_parts,
+        })
+
+    # Return a safe message if the model keeps asking for tools.
+    return "Sorry, something went wrong, Please try again!"
+
+        # final_response = response.candidates[0].content.parts[0].text
+        # return final_response
