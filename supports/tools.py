@@ -19,10 +19,10 @@ def get_order_details(order_id):
             "days_since_order": (timezone.now() - order.created_at).days  # 20
         }
     except Order.DoesNotExist:
-        return {"error": f"Order #{order.id} not found."}
+        return {"error": f"Order #{order_id} not found."}
 
 
-def get_refund_history(order_id=None, user_id=None):
+def get_refund_history(*, order_id=None, user_id=None):
     if order_id is not None:
         refunds = RefundRequest.objects.filter(order_id=order_id).order_by("-created_at")
     elif user_id is not None:
@@ -83,7 +83,7 @@ def get_customer_risk_profile(user_id):
         "recent_refunds_request": recent_refunds_request,
         "refund_last_90_days": total_refunds,
         "denied_refunds": denied,
-        "approved_refunds": approved,
-        "pending_refunds": pending,
+        "approved_refunds": approved.count(),
+        "pending_refunds": pending.count(),
         "refund_to_order_ratio": refund_to_order_reatio
     }

@@ -7,6 +7,15 @@ from orders.models import Order
 class Conversation(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="conversations")
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="conversations")
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+
+    @property
+    def manager_involve(self):
+        return self.agent_log.filter(event_type="manager").exists()
+        
+    @property
+    def risk_assessed(self):
+        return self.agent_log.filter(event_type="risk").exists()
 
     def __str__(self):
         return f"Conversation #{self.user.username} / Order #{self.order.id}"

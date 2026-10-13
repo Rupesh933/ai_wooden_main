@@ -1,0 +1,118 @@
+{% extends "supports/dashboard_base.html" %}
+
+{% block content %}
+      <!-- Main Content -->
+      <div class="flex-grow-1 p-4">
+        <!-- Header -->
+        <div class="d-flex align-items-center gap-3 mb-4">
+          <a
+            href="/supports/dashboard/"
+            class="text-muted text-decoration-none"
+            style="font-size: 13px"
+            >← Back</a
+          >
+          <h5 class="fw-bold mb-0">Conversation #{{ conversations.id }}</h5>
+          <span class="text-muted" style="font-size: 13px">
+            {{ conversations.user.username }} · Order #{{ conversations.order.id }} · {{ conversations.order.product_name }}
+          </span>
+        </div>
+
+        <!-- Two Column Layout -->
+        <div class="row g-3" style="height: calc(100vh - 160px)">
+          <!-- Left: Chat Transcript -->
+          <div class="col-md-6" style="max-height: calc(100vh - 160px)">
+            <div class="card h-100">
+              <div class="card-header fw-semibold" style="font-size: 13px">
+                Chat Transcript
+              </div>
+              <div class="card-body overflow-auto d-flex flex-column gap-2" id="chat-transcript">
+                {% for msg in messages %}
+                 {% if msg.role == "user" %}
+                <div>
+                  <div
+                    style="font-size: 11px; color: #adb5bd; margin-bottom: 3px"
+                  >
+                    {{ conversations.user.username }} · {{ msg.time }}
+                  </div>
+                  <div class="bubble bubble-user rounded p-2 px-3 user-messages">{{ msg.content }}</div>
+                </div>
+                {% else %}
+                <div class="text-end">
+                  <div
+                    style="font-size: 11px; color: #adb5bd; margin-bottom: 3px"
+                  >
+                    Shree (AI Agent) · {{ msg.time }}
+                  </div>
+                  <div class="bubble bubble-agent rounded p-2 px-3 d-inline-block text-start">{{ msg.content }}</div>
+                </div>
+                {% endif %}
+                 {% empty %}
+                <p
+                  class="text-muted text-center my-auto"
+                  style="font-size: 13px"
+                >
+                  No messages yet.
+                </p>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Agent Activity -->
+          <div class="col-md-6" style="max-height: calc(100vh - 160px)">
+            <div class="card h-100">
+              <div
+                class="card-header d-flex align-items-center gap-2"
+                style="font-size: 13px"
+              >
+                <div
+                  style="
+                    width: 8px;
+                    height: 8px;
+                    border-radius: 50%;
+                    background: #1d9e75;
+                  "
+                ></div>
+                <span class="fw-semibold">Agent Activity</span>
+              </div>
+              <div class="card-body overflow-auto d-flex flex-column gap-3" id="agent-activity">
+                {% for log in agentlogs %}
+                <div>
+                  <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="log-badge log-{{ log.event_type }}"
+                      >{{ log.event_type }}</span
+                    >
+                    <span class="text-muted" style="font-size: 11px"
+                      >{{ log.time }}</span
+                    >
+                  </div>
+                  <p class="mb-0 text-muted log-text">{{ log.message }}</p>
+                </div>
+                {% empty %}
+                <p
+                  class="text-muted text-center my-auto"
+                  style="font-size: 13px"
+                >
+                  No agent activity recorded for this conversation.
+                </p>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    const chatTranscript = document.getElementById("chat-transcript")
+    const agentActivity = document.getElementById("agent-activity")
+    if (chatTranscript) {
+      chatTranscript.scrollTop = chatTranscript.scrollHeight;
+    }
+    
+    if (agentActivity){
+      agentActivity.scrollTop = agentActivity.scrollHeight;
+    }
+
+  })
+</script>
+{% endblock %}

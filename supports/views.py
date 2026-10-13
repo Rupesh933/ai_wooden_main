@@ -3,6 +3,9 @@ import json
 from django.http import JsonResponse
 import time
 
+from django.contrib.admin.views.decorators import staff_member_required
+from django.utils import timezone
+
 from orders.models import Order
 from .models import Conversation, Message
 from .agents import run_support_agent
@@ -33,3 +36,44 @@ def chat(request, order_id):
 
         # time.sleep(5)
         return JsonResponse({"reply": reply})
+
+@staff_member_required
+def dashboard(request):
+    conversations = Conversation.objects.all().order_by("-created_at")
+    print("conversation ====>> ", conversations)
+    context = {
+        "conversations": conversations
+    }
+
+    return render(request, "supports/dashboard.html", context)
+
+@staff_member_required
+def conversation_detail(request, conversation_id):
+    conversations = get_object_or_404(Conversation, id=conversation_id)
+    messages = [
+        {
+            "id": message.id,
+            "role": message.role,
+            "content": message.content,
+            "time": timezone.localtime(message.created_at).strftime("%I:%M %p"),
+        }
+        for message in conversations.messages.order_by("created_at")
+    ]
+    agentlogs = [
+        {
+            "id": log.id,
+            "event_type": log.event_type,
+            "message": log.message,
+            "time": timezone.localtime(log.created_at).strftime("%I:%M %p"),
+        }
+        for log in conversations.agent_log.order_by("created_at")
+    ]
+    print("conversations ===>> ", conversations)
+    print("messages ===>> ", messages)
+    print("agentlogs ===>> ", agentlogs)
+    context = {
+        "conversations": conversations,
+        "messages": messages,
+        "agentlogs": agentlogs
+    }
+    return render(request, "supports/conversation_details.html", context)

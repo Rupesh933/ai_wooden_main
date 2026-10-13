@@ -4,7 +4,7 @@ from google import genai
 from django.conf import settings
 
 from .tools import get_order_details, get_refund_history, check_delivery_status, get_customer_risk_profile
-from .models import Conversation
+from .models import Conversation, AgentLog
 
 GEMINI_KEY = settings.GEMINI_API_KEY
 GEMINI_MODEL = settings.GEMINI_MODEL
@@ -72,6 +72,9 @@ How to decide:
 - Then check the refund history for patterns, such as many refunds in a short time
 - One past refund alone is not suspicious
 - DENY is for weak cases. ESCALATE_TO_RISK is for suspicious cases
+- After reading the refund history, if the customer has 3 or more refund requests,
+  you MUST call access_fraud_risk before deciding, even if the claim looks weak
+- Check for fraud patterns BEFORE denying on policy grounds
 
 Rules:
 - Use only the information given and the tool result. Never make up details
@@ -229,39 +232,55 @@ MANAGER_TOOLS = [
     {
         "function_declarations": [
             {
-                "name": "access_fraud_risk",
-                "description": "Consult the risk agent to access fraud risk for a customer. Use this when refund request looks suspicious or customer has multiple refund requests. Pass the user_id to get a risk verdict.",
+                "name": "get_refund_history",
+                "description": "Get the current customer's refund history. Always call this before making a refund decision.",
                 "parameters": {
                     "type": "OBJECT",
-                    "properties": {
-                        "user_id": {
-                            "type": "INTEGER",
-                            "description": "The user ID to access the fraud risk for"
-                        }
-                    },
-                    "required": ["user_id"]
+                    "properties": {}
+                }
+            },
+            {
+                "name": "access_fraud_risk",
+                "description": "Consult the risk agent to assess fraud risk for the current customer. Use this when the customer has 3 or more refund requests, or the request looks suspicious. No arguments needed.",
+                "parameters": {
+                    "type": "OBJECT",
+                    "properties": {}
                 }
             }
         ]
     }
 ]
 
+# RISK_TOOLS = [
+#     {
+#         "function_declarations": [
+#             {
+#                 "name": "get_customer_risk_profile",
+#                 "description": "Get complete risk profile for a customer including order history, refund patterns and ratio. Use this to access fraud risk.",
+#                 "parameters": {
+#                     "type": "OBJECT",
+#                     "properties": {
+#                         "user_id": {
+#                             "type": "INTEGER",
+#                             "description": "The user ID to access risk for"
+#                         }
+#                     },
+#                     "required": ["user_id"]
+#                 },
+#             }
+#         ]
+#     }
+# ]
 RISK_TOOLS = [
     {
         "function_declarations": [
             {
                 "name": "get_customer_risk_profile",
-                "description": "Get complete risk profile for a customer including order history, refund patterns and ratio. Use this to access fraud risk.",
+                "description": "Get the complete risk profile for the current customer, including order history, refund patterns and refund-to-order ratio.",
                 "parameters": {
                     "type": "OBJECT",
-                    "properties": {
-                        "user_id": {
-                            "type": "INTEGER",
-                            "description": "The user ID to access risk for"
-                        }
-                    },
-                    "required": ["user_id"]
-                },
+                    "properties": {}
+                }
             }
         ]
     }
@@ -269,13 +288,13 @@ RISK_TOOLS = [
 
 # execute_tool() --> bridge between gemini and python function (tools)
 # AI can not run python code so it just tell us which tool to call and what argument to pass - It receive(AI) receive request and runs the actual python code/function
-def execute_tool(tool_name, tool_input, user_id, order_id):
+def execute_tool(tool_name, tool_input, user_id, order_id, conversation_id=None):
     if tool_name == "get_order_details":
         # Use the order from this chat so the model cannot pick another order.
-        return get_order_details(order_id)
+        return get_order_details(order_id=order_id)
 
     if tool_name == "get_refund_history":
-        return get_refund_history(user_id)
+        return get_refund_history(user_id=user_id)
     
     if tool_name == "check_delivery_status":
         return check_delivery_status(tool_input["tracking_number"], tool_input["carrier"])
@@ -283,19 +302,19 @@ def execute_tool(tool_name, tool_input, user_id, order_id):
     if tool_name == "escalate_to_manager":
         case_summary = tool_input["case_summary"]
         print("escalate to manager ===> ", case_summary)
-        decision = run_manager_agent(case_summary, user_id)
+        decision = run_manager_agent(case_summary, user_id, conversation_id)
         print("decision ===> ", decision)
         return decision
 
     if tool_name == "access_fraud_risk":
-        user_id = tool_input["user_id"]
+        # user_id = tool_input["user_id"]
         print("Consulting risk agent for user ===>> ", user_id)
-        verdict = run_risk_agent(user_id)
-        print("risk_verdict ===> ", verdict)
+        verdict = run_risk_agent(user_id, conversation_id)
+        print("risk_verdict ===>    ", verdict)
         return verdict
 
     if tool_name == "get_customer_risk_profile":
-        return get_customer_risk_profile(tool_input["user_id"])
+        return get_customer_risk_profile(user_id=user_id)
 
     # Unknown tool name
     return {"error": f"Unknown tool: {tool_name}"}
@@ -331,6 +350,7 @@ def run_support_agent(user_message, conversation_id, order_id, user_id):
     final_response = response.candidates[0].content.parts[0].text
     return final_response
 '''
+
 def run_support_agent(user_message, conversation_id, order_id, user_id):
     conv = Conversation.objects.get(id=conversation_id)
 
@@ -362,7 +382,13 @@ def run_support_agent(user_message, conversation_id, order_id, user_id):
 
         # if there is not function call, return the final text
         if not getattr(response, "function_calls", None):
-            return response.text or "Sorry, I could not generate a reply."
+            final_reply = response.text or "Sorry, I could not generate a reply."
+            AgentLog.objects.create(
+                conversation=conv,
+                event_type="final",
+                message=final_reply,
+            )
+            return final_reply
 
         # add a model's function call message to history
         conversation_messages.append(response.candidates[0].content)
@@ -371,13 +397,31 @@ def run_support_agent(user_message, conversation_id, order_id, user_id):
         result_parts = []
         for call in response.function_calls:
             print("Tool Call ===> ", call.name, call.args)
+            AgentLog.objects.create(
+                conversation=conv,
+                event_type="tool_call",
+                message=f"Calling tool {call.name} with {call.args or {}}",
+            )
             try:
-                result = execute_tool(call.name, call.args or {}, user_id, order_id)
+                result = execute_tool(
+                    call.name,
+                    call.args or {},
+                    user_id,
+                    order_id,
+                    conversation_id,
+                )
                 # Convert Decimal and other values to text Gemini can send.
                 result = json.loads(json.dumps(result, default=str))
-            except Exception:
+            except Exception as e:
                 # Keep tool errors out of the chat and let the model explain the problem.
+                print("Tool Error ===> ", call.name, repr(e))
                 result = {"error": "This information is not available right now."}
+
+            AgentLog.objects.create(
+                conversation=conv,
+                event_type="tool_result",
+                message=f"{call.name} returned: {str(result)[:200]}",
+            )
 
             result_parts.append({
                 "function_response": {
@@ -399,7 +443,12 @@ def run_support_agent(user_message, conversation_id, order_id, user_id):
         # final_response = response.candidates[0].content.parts[0].text
         # return final_response
 
-def run_manager_agent(case_summary, user_id):
+def run_manager_agent(case_summary, user_id, conversation_id):
+
+    conv = Conversation.objects.get(id=conversation_id)
+    AgentLog.objects.create(conversation=conv, event_type="manager", message=f"Case received for review: {case_summary[:200]}")
+    risk_agent_invoked = False
+
     # The manager has no chat history. It only gets the case summary from Shree.
     manager_messages = [
         {
@@ -421,7 +470,19 @@ def run_manager_agent(case_summary, user_id):
 
         # No function call means this is the final decision
         if not getattr(response, "function_calls", None):
-            return response.text or "Manager could not make a decision."
+            decision = response.text or "Manager could not make a decision."
+            escalates_to_risk = any(
+                line.strip().upper().startswith("DECISION: ESCALATE_TO_RISK")
+                for line in decision.splitlines()
+            )
+            if escalates_to_risk and not risk_agent_invoked:
+                run_risk_agent(user_id, conversation_id)
+            AgentLog.objects.create(
+                conversation=conv,
+                event_type="manager",
+                message=f"Decision: {decision[:500]}",
+            )
+            return decision
 
         # Save the model's tool request in the history
         manager_messages.append(response.candidates[0].content)
@@ -430,13 +491,29 @@ def run_manager_agent(case_summary, user_id):
         result_parts = []
         for call in response.function_calls:
             print("Manager Tool Call ===> ", call.name, call.args)
+
+            if call.name == "access_fraud_risk":
+                risk_agent_invoked = True
+
+            AgentLog.objects.create(
+                conversation=conv,
+                event_type="manager",
+                message=f"Calling manager tool {call.name} with {call.args or {}}",
+            )
+
             try:
                 # order_id is None because the manager has no tool that needs it
-                result = execute_tool(call.name, call.args or {}, user_id, None)
+                result = execute_tool(call.name, call.args or {}, user_id, None, conversation_id)
                 result = json.loads(json.dumps(result, default=str))
             except Exception as e:
                 print("Manager Tool Error ===> ", call.name, repr(e))
                 result = {"error": "This information is not available right now."}
+
+            AgentLog.objects.create(
+                conversation=conv,
+                event_type="manager",
+                message=f"{call.name} returned: {str(result)[:200]}",
+            )
 
             result_parts.append({
                 "function_response": {
@@ -454,7 +531,16 @@ def run_manager_agent(case_summary, user_id):
 
     return "Manager could not finish. Please try again."
 
-def run_risk_agent(user_id):
+def run_risk_agent(user_id, conversation_id=None):
+
+
+    if conversation_id is not None:
+        conv = Conversation.objects.get(id=conversation_id)
+        AgentLog.objects.create(
+            conversation=conv,
+            event_type="risk",
+            message=f"Starting risk assessment for user {user_id}.",
+        )
     risk_messages = [
         {
             "role": "user",
@@ -476,7 +562,14 @@ def run_risk_agent(user_id):
 
         # No function call means this is the final verdict
         if not getattr(response, "function_calls", None):
-            return response.text or "Risk agent could not make a verdict."
+            verdict = response.text or "Risk agent could not make a verdict."
+            if conversation_id is not None:
+                AgentLog.objects.create(
+                    conversation=conv,
+                    event_type="risk",
+                    message=f"Risk verdict: {verdict[:500]}",
+                )
+            return verdict
 
         # Save the model's tool request in the history
         risk_messages.append(response.candidates[0].content)
