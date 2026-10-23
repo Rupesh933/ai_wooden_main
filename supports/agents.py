@@ -3,6 +3,8 @@ import json
 from google import genai
 from django.conf import settings
 
+from supports.event_queue import publish, DONE
+
 from .tools import get_order_details, get_refund_history, check_delivery_status, get_customer_risk_profile
 from .models import Conversation, AgentLog
 
@@ -388,6 +390,9 @@ def run_support_agent(user_message, conversation_id, order_id, user_id):
                 event_type="final",
                 message=final_reply,
             )
+            # Publish final reply to SSE stream
+            publish(conversation_id, {"type": "final", "message": final_reply})
+            publish(conversation_id, DONE)
             return final_reply
 
         # add a model's function call message to history
@@ -396,6 +401,9 @@ def run_support_agent(user_message, conversation_id, order_id, user_id):
         # run each tool and collects results as dicts
         result_parts = []
         for call in response.function_calls:
+            event = {"type": "tool_call", "message": f"Calling tool {call.name} with {call.args or {}}",}
+            publish(conversation_id, event)
+
             print("Tool Call ===> ", call.name, call.args)
             AgentLog.objects.create(
                 conversation=conv,
@@ -410,6 +418,7 @@ def run_support_agent(user_message, conversation_id, order_id, user_id):
                     order_id,
                     conversation_id,
                 )
+
                 # Convert Decimal and other values to text Gemini can send.
                 result = json.loads(json.dumps(result, default=str))
             except Exception as e:
@@ -422,6 +431,7 @@ def run_support_agent(user_message, conversation_id, order_id, user_id):
                 event_type="tool_result",
                 message=f"{call.name} returned: {str(result)[:200]}",
             )
+            publish(conversation_id, {"type": "tool_result", "message": f"{call.name} returned: {str(result)[:200]}"})
 
             result_parts.append({
                 "function_response": {
@@ -446,6 +456,10 @@ def run_support_agent(user_message, conversation_id, order_id, user_id):
 def run_manager_agent(case_summary, user_id, conversation_id):
 
     conv = Conversation.objects.get(id=conversation_id)
+
+    event = {"type": "manager", "message": f"Case received for review: {case_summary[:200]}",}
+    publish(conversation_id, event)
+
     AgentLog.objects.create(conversation=conv, event_type="manager", message=f"Case received for review: {case_summary[:200]}")
     risk_agent_invoked = False
 
@@ -482,6 +496,7 @@ def run_manager_agent(case_summary, user_id, conversation_id):
                 event_type="manager",
                 message=f"Decision: {decision[:500]}",
             )
+            publish(conversation_id, {"type": "manager", "message": f"Decision: {decision[:500]}"})
             return decision
 
         # Save the model's tool request in the history
@@ -495,11 +510,15 @@ def run_manager_agent(case_summary, user_id, conversation_id):
             if call.name == "access_fraud_risk":
                 risk_agent_invoked = True
 
+            event = {"type": "manager", "message": f"Calling manager tool {call.name} with {call.args or {}}",}
+            publish(conversation_id, event)
+
             AgentLog.objects.create(
                 conversation=conv,
                 event_type="manager",
                 message=f"Calling manager tool {call.name} with {call.args or {}}",
             )
+
 
             try:
                 # order_id is None because the manager has no tool that needs it
@@ -508,6 +527,9 @@ def run_manager_agent(case_summary, user_id, conversation_id):
             except Exception as e:
                 print("Manager Tool Error ===> ", call.name, repr(e))
                 result = {"error": "This information is not available right now."}
+
+            event = {"type": "manager", "message": f"{call.name} returned: {str(result)[:200]}"}
+            publish(conversation_id, event)
 
             AgentLog.objects.create(
                 conversation=conv,
@@ -533,6 +555,8 @@ def run_manager_agent(case_summary, user_id, conversation_id):
 
 def run_risk_agent(user_id, conversation_id=None):
 
+    event = {"type": "risk", "message": f"Starting risk assessment for user {user_id}."}
+    publish(conversation_id, event)
 
     if conversation_id is not None:
         conv = Conversation.objects.get(id=conversation_id)
@@ -569,6 +593,7 @@ def run_risk_agent(user_id, conversation_id=None):
                     event_type="risk",
                     message=f"Risk verdict: {verdict[:500]}",
                 )
+                publish(conversation_id, {"type": "risk", "message": f"Risk verdict: {verdict[:500]}"})
             return verdict
 
         # Save the model's tool request in the history
