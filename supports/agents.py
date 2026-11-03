@@ -5,7 +5,7 @@ from django.conf import settings
 
 from supports.event_queue import publish, DONE
 
-from .tools import get_order_details, get_refund_history, check_delivery_status, get_customer_risk_profile
+from .tools import get_order_details, get_refund_history, check_delivery_status, get_customer_risk_profile, search_knowledge_base
 from .models import Conversation, AgentLog
 
 GEMINI_KEY = settings.GEMINI_API_KEY
@@ -24,6 +24,7 @@ Your responsibilities:
 - Check order details when the customer asks about their order
 - Check delivery status using the tracking number and carrier when the customer asks about delivery
 - Check refund history before discussing any refund or cancellation
+- Search company documents using search_knowledge_base when the customer asks about warranty, return policies, or product FAQs
 - Be empathetic but honest
 
 Your personality:
@@ -35,7 +36,7 @@ Your personality:
 Reply format (very important):
 - Write short lines, not one big paragraph
 - Put a blank line between each part of the reply
-- Use this order: 1) one short empathy or greeting line, 2) the answer or decision, 3) the reason or details, 4) the next step
+- Use this order: 1) the direct answer or decision (or a brief empathy line if the customer has an issue or complaint), 2) the reason or details, 3) the next step
 - When you give 2 or more facts (status, dates, amounts, steps), show them as a list, one fact per line, each starting with "- "
 - Keep each line under 20 words
 - Never use markdown symbols like ** or # because the chat cannot show them. Plain text only
@@ -43,6 +44,9 @@ Reply format (very important):
 - Simple greetings and small talk stay as 1 or 2 short lines
 
 Important rules:
+- NEVER start messages or answers with "Hello", "Hi", or any greeting once a conversation has started. Jump straight into the answer.
+- ONLY greet the customer if this is the very first message of a brand new conversation, or if the customer's message is strictly a greeting (such as "hi" or "hello").
+- For follow-up questions, inquiries about products, policies, orders, or delivery, NEVER include a greeting like "Hello! 👋". Start directly with the answer or facts.
 - For greetings or small talk, reply naturally and briefly. Do not call tools and do not ask for an order number
 - If the customer asks something unrelated to TimberNest (like general knowledge or coding), politely say you can only help with TimberNest orders and products, then offer help with those
 - Never repeat the same greeting or the same answer twice in a conversation
@@ -225,6 +229,20 @@ SUPPORT_TOOLS = [
                     },
                     "required": ["case_summary"]
                 }
+            },
+            {
+                "name": "search_knowledge_base",
+                "description": "Search Timbernest company documents including refund policy, warranty policy, and product FAQs. Use this when customer asks about company policies, warranty coverage, warranty claims, refund eligibility, or any general product information that requires accurate company documents.",
+                "parameters":{
+                    "type": "OBJECT",
+                    "properties": {
+                        "query": {
+                            "type": "STRING",
+                            "description": "The search query to find relevant information from company documents. Be specific - for example 'refund eligibility within 30 days' instead of just 'refund'.",
+                        }
+                    },
+                    "required": ["query"]
+                }
             }
         ]
     }
@@ -317,6 +335,10 @@ def execute_tool(tool_name, tool_input, user_id, order_id, conversation_id=None)
 
     if tool_name == "get_customer_risk_profile":
         return get_customer_risk_profile(user_id=user_id)
+
+    if tool_name == "search_knowledge_base":
+        query = tool_input.get("query") if isinstance(tool_input, dict) else str(tool_input)
+        return search_knowledge_base(query)
 
     # Unknown tool name
     return {"error": f"Unknown tool: {tool_name}"}

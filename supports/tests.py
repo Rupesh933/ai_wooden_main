@@ -76,3 +76,21 @@ class ManagerRiskAssessmentTests(TestCase):
             ).count(),
             2,
         )
+
+
+class ToolDeclarationsSchemaTests(TestCase):
+    def test_tool_declarations_required_properties_exist(self):
+        from .agents import SUPPORT_TOOLS, MANAGER_TOOLS, RISK_TOOLS
+
+        for tools in [SUPPORT_TOOLS, MANAGER_TOOLS, RISK_TOOLS]:
+            for tool_group in tools:
+                for func in tool_group.get("function_declarations", []):
+                    params = func.get("parameters", {})
+                    props = set(params.get("properties", {}).keys())
+                    required = params.get("required", [])
+                    for req in required:
+                        self.assertIn(
+                            req,
+                            props,
+                            f"Tool '{func['name']}' has required param '{req}' which is missing in properties: {props}",
+                        )

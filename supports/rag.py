@@ -74,3 +74,32 @@ def load_documents():
         collection.upsert(documents=documents, ids=ids)
 
     print(f"loaded {len(documents)} chunks into chromaDB")
+
+
+def search_knowledge_base(query):
+    results = collection.query(query_texts=[query], n_results=3)
+
+    if not results["documents"][0]:
+        return "No relevent information found in compact documents"
+
+    matched_chunks = results["documents"][0]
+    return "\n\n".join(matched_chunks)
+
+"""
+if we return only return matched_chunks
+if will return 
+matched_chunks = [
+    'Refund request must be ....'
+    'Refund request ......'
+    'Refu....'
+]
+
+but want this type
+
+Refund request must be .....
+
+Refund request ........
+
+Refund .......
+
+"""

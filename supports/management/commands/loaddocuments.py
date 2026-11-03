@@ -9,3 +9,4 @@ class Command(BaseCommand):
         self.stdout.write("Loading documents into ChromaDB...")
         load_documents()
         self.stdout.write(self.style.SUCCESS("Documents loaded successfully."))
+
