@@ -14,9 +14,9 @@ def get_order_details(order_id: int) -> dict:
     return _get_order_details(order_id)
 
 @tool
-def get_refund_history(order_id: int, user_id: int) -> dict:
+def get_refund_history(order_id: int = None, user_id: int = None) -> dict:
     """Get complete refund history for the current customer. Use this before discussing any refund or cancellation."""
-    return _get_refund_history(order_id, user_id)
+    return _get_refund_history(order_id=order_id, user_id=user_id)
 
 @tool
 def check_delivery_status(tracking_number: str, carrier: str) -> dict:

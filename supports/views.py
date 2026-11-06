@@ -12,6 +12,7 @@ from .event_queue import subscribe, unSubscribe
 from .models import Conversation, Message
 from .agents import run_support_agent
 from .event_queue import publish
+from .langchain_agents import run_support_agent_langchain
 
 # Create your views here.
 
@@ -35,7 +36,9 @@ def chat(request, order_id):
         publish(conversation.id, event)
 
         # send user message and conversation to the LLM
-        reply = run_support_agent(user_message, conversation.id, order.id, request.user.id)
+        # reply = run_support_agent(user_message, conversation.id, order.id, request.user.id)
+
+        reply = run_support_agent_langchain(user_message, conversation.id, order.id, request.user.id)
 
         # Store the LLM reply
         Message.objects.create(conversation=conversation, role="agent", content=reply)

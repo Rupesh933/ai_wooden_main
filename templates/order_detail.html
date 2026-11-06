@@ -397,6 +397,15 @@
   }
 
   function appendMessage(message, sender) {
+    if (typeof message === "object" && message !== null) {
+      if (Array.isArray(message) && message.length > 0 && message[0].text) {
+        message = message.map(m => m.text || "").join("");
+      } else if (message.text) {
+        message = message.text;
+      } else {
+        message = JSON.stringify(message);
+      }
+    }
     const messageElement = document.createElement("div");
     messageElement.className = `${sender}-message p-2 px-3`;
     messageElement.textContent = message;

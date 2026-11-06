@@ -94,3 +94,51 @@ class ToolDeclarationsSchemaTests(TestCase):
                             props,
                             f"Tool '{func['name']}' has required param '{req}' which is missing in properties: {props}",
                         )
+
+
+class LangChainAgentOutputTests(TestCase):
+    def test_extract_text_content_from_gemini_block_format(self):
+        from .langchain_agents import _extract_text_content
+
+        gemini_blocks = [
+            {
+                "type": "text",
+                "text": "Your Timbernest folding bed order is dispatched 📦",
+                "extras": {"signature": "abc123xyz"},
+            }
+        ]
+        result = _extract_text_content(gemini_blocks)
+        self.assertEqual(result, "Your Timbernest folding bed order is dispatched 📦")
+
+    def test_extract_text_content_from_plain_string(self):
+        from .langchain_agents import _extract_text_content
+
+        self.assertEqual(_extract_text_content("Hello!"), "Hello!")
+
+    @patch("supports.langchain_agents.support_agent.invoke")
+    def test_run_support_agent_langchain_returns_clean_string(self, mock_invoke):
+        from langchain_core.messages import AIMessage
+        from .langchain_agents import run_support_agent_langchain
+
+        mock_invoke.return_value = {
+            "messages": [
+                AIMessage(
+                    content=[
+                        {
+                            "type": "text",
+                            "text": "Your folding bed is on its way!",
+                            "extras": {"signature": "sig123"},
+                        }
+                    ]
+                )
+            ]
+        }
+
+        # Test with (user_message, conversation_id, order_id, user_id)
+        reply = run_support_agent_langchain("hey", 1, 10, 1)
+        self.assertEqual(reply, "Your folding bed is on its way!")
+        self.assertIsInstance(reply, str)
+
+        # Test with inverted (conversation_id, user_message, order_id, user_id)
+        reply_inverted = run_support_agent_langchain(1, "hey", 10, 1)
+        self.assertEqual(reply_inverted, "Your folding bed is on its way!")
